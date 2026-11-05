@@ -6,6 +6,7 @@
 - [Usage Guide](#usage-guide)
 - [Additional Mockups](#additional-mockups)
 - [Test Coverage](#test-coverage)
+- [Changes Since Submission](#changes-since-submission)
 - [Technologies used](#technologies-used)
 - [Acknowledgements](#acknowledgements)
 ## Overview
@@ -147,6 +148,22 @@ This included verifying standard CRUD operations, complex relational updates, an
 In terms of testing we employed a suite of technologies in order to engage in various forms of both manual and automatic. This includes:
 - Jest and xUnit for automated testing of our frontend and backend applications. These two technologies were also built in additions to react and dotnet.
 - Swagger and Insomnia for manual testing of backend during early to mid and later development accordingly.
+
+## Changes Since Submission
+
+After the original project submission, I made the following improvements in this fork:
+
+| Area | At submission | Now |
+|---|---|---|
+| Test suite | 35 of 39 frontend tests passing; the 4 failures covered features still in progress | Improved the test suite and fixed the failing frontend tests |
+| Low-stock alerts | A bug showed every warehouse's low-stock alerts to all warehouses | Each warehouse now only sees its own low-stock alerts |
+
+The Test Coverage figures above describe the project as it was at submission.
+
+### Future Improvements
+- **Act on low-stock alerts directly:** click an alert to restock the item or start a craft.
+- **Better profile and admin account management.**
+- **Client-led iteration:** more rounds of client feedback and usability testing with warehouse staff, treating Artifax as a live product.
 
 ## Technologies used
 
