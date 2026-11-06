@@ -17,6 +17,7 @@ describe('InventoryItemEditModal', () => {
       price: 199.99,
       minStock: 5,
       location: 'Johannesburg',
+      branchId: 2,
       status: 'LOW',
       productionTime: 50,
     };
@@ -37,12 +38,13 @@ describe('InventoryItemEditModal', () => {
 
     await userEvent.clear(screen.getByLabelText(/price \(zar\)/i));
     await userEvent.type(screen.getByLabelText(/price \(zar\)/i), '249.5');
+    expect(screen.getByTestId('edit-item-branch')).toHaveTextContent('Johannesburg');
     await userEvent.clear(screen.getByLabelText(/total quantity/i));
     await userEvent.type(screen.getByLabelText(/total quantity/i), '12');
     await userEvent.click(categoryButton);
     await userEvent.click(screen.getByRole('option', { name: 'Metals' }));
     await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
-    expect(onSave).toHaveBeenCalledWith(7, expect.objectContaining({ itemCategory: 'Metals', price: 249.5, quantity: 12 }));
+    expect(onSave).toHaveBeenCalledWith(7, expect.objectContaining({ itemCategory: 'Metals', price: 249.5, quantity: 12, branchId: 2 }));
   });
 });
