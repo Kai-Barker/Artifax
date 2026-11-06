@@ -310,3 +310,67 @@ html[data-theme='synthwave'] {
     font-weight: 600;
   }
 }
+
+/* ------------------------------------------------------------------
+   Toasts (react-toastify), themed with the app's tokens.
+   Set on the .Toastify container so they beat the library's :root
+   defaults and follow the active theme through the token variables.
+------------------------------------------------------------------- */
+.Toastify {
+  --toastify-color-light: var(--surface);
+  --toastify-text-color-light: var(--text);
+  --toastify-font-family: 'Sora', 'Segoe UI', sans-serif;
+  --toastify-toast-bd-radius: 12px;
+  --toastify-toast-padding: 12px 14px;
+  --toastify-toast-min-height: 56px;
+  --toastify-toast-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+
+  --toast-accent-success: var(--ok-text);
+  --toast-accent-error: var(--danger-text);
+  --toast-accent-info: var(--primary);
+  --toast-accent-warning: var(--warn-text);
+
+  --toastify-icon-color-success: var(--toast-accent-success);
+  --toastify-icon-color-error: var(--toast-accent-error);
+  --toastify-icon-color-info: var(--toast-accent-info);
+  --toastify-icon-color-warning: var(--toast-accent-warning);
+  --toastify-color-progress-success: var(--toast-accent-success);
+  --toastify-color-progress-error: var(--toast-accent-error);
+  --toastify-color-progress-info: var(--toast-accent-info);
+  --toastify-color-progress-warning: var(--toast-accent-warning);
+}
+
+/* Status colours need lighter tints to read on the dark synthwave surface */
+html[data-theme='synthwave'] .Toastify {
+  --toast-accent-success: #86efac;
+  --toast-accent-error: #fca5a5;
+  --toast-accent-info: #8cc8f5;
+  --toast-accent-warning: #fcd34d;
+  --toastify-toast-shadow: 0 14px 36px rgba(3, 10, 18, 0.45);
+}
+
+.Toastify__toast {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.Toastify__toast--success { border-left-color: var(--toast-accent-success); }
+.Toastify__toast--error { border-left-color: var(--toast-accent-error); }
+.Toastify__toast--info { border-left-color: var(--toast-accent-info); }
+.Toastify__toast--warning { border-left-color: var(--toast-accent-warning); }
+
+.Toastify__close-button--light {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.Toastify__close-button--light:hover,
+.Toastify__close-button--light:focus {
+  opacity: 1;
+}
+
+.Toastify__progress-bar {
+  height: 3px;
+}
