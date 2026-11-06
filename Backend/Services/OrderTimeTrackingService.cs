@@ -124,12 +124,15 @@ namespace Artifax.Services
                         .Where(o => o.BranchID == branch.BranchID && o.Status == "Active")
                         .CountAsync(stoppingToken);
 
-                    // If less than 3 active, activate oldest queued order
+                    // If less than 3 active, activate the next queued order:
+                    // lowest QueuePosition first (set by the user reordering), then oldest.
                     while (activeCount < 3)
                     {
                         var oldestQueuedOrder = await context.Orders
                             .Where(o => o.BranchID == branch.BranchID && o.Status == "Queued")
-                            .OrderBy(o => o.CreatedDateTime)
+                            .OrderBy(o => o.QueuePosition == null)
+                            .ThenBy(o => o.QueuePosition)
+                            .ThenBy(o => o.CreatedDateTime)
                             .FirstOrDefaultAsync(stoppingToken);
 
                         if (oldestQueuedOrder == null)
@@ -137,6 +140,7 @@ namespace Artifax.Services
 
                         oldestQueuedOrder.Status = "Active";
                         oldestQueuedOrder.StartedDateTime = DateTime.UtcNow;
+                        oldestQueuedOrder.QueuePosition = null;
 
                         logger.LogInformation($"Order {oldestQueuedOrder.OrderID} activated from Queued status. Branch: {branch.BranchID}");
 

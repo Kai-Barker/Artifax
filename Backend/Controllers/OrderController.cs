@@ -20,6 +20,15 @@ namespace Artifax.Controllers
             context = incoming;
         }
 
+        // Position for an order joining the back of a branch's queue.
+        private async Task<int> NextQueuePositionAsync(int branchId)
+        {
+            int? last = await context.Orders
+                .Where(o => o.BranchID == branchId && o.Status == "Queued")
+                .MaxAsync(o => o.QueuePosition);
+            return (last ?? 0) + 1;
+        }
+
         #region GetRoutes
 
         // GET /api/Order/history/all — Returns history for all orders (must come BEFORE {id} route)
@@ -69,7 +78,8 @@ namespace Artifax.Controllers
                 Status = o.Status,
                 BranchID = o.BranchID,
                 EmployeeID = o.EmployeeID,
-                OrderExpedite = o.OrderExpedite
+                OrderExpedite = o.OrderExpedite,
+                QueuePosition = o.QueuePosition
             }).ToList();
 
             return Ok(orderDtos);
@@ -127,7 +137,8 @@ namespace Artifax.Controllers
                 Status = order.Status,
                 BranchID = order.BranchID,
                 EmployeeID = order.EmployeeID,
-                OrderExpedite = order.OrderExpedite
+                OrderExpedite = order.OrderExpedite,
+                QueuePosition = order.QueuePosition
             };
 
             return Ok(orderDto);
@@ -180,6 +191,7 @@ namespace Artifax.Controllers
                 EmployeeID = newOrderDto.EmployeeID,
                 OrderExpedite = newOrderDto.OrderExpedite,
                 Status = initialStatus,
+                QueuePosition = initialStatus == "Queued" ? await NextQueuePositionAsync(newOrderDto.BranchID) : null,
                 CreatedDateTime = DateTime.UtcNow,
                 StartedDateTime = startedDateTime,
                 TotalTime = totalTime,
@@ -209,7 +221,8 @@ namespace Artifax.Controllers
                 Status = created.Status,
                 BranchID = created.BranchID,
                 EmployeeID = created.EmployeeID,
-                OrderExpedite = created.OrderExpedite
+                OrderExpedite = created.OrderExpedite,
+                QueuePosition = created.QueuePosition
             };
 
             return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.OrderID }, createdDto);
@@ -249,6 +262,12 @@ namespace Artifax.Controllers
             if (employee == null)
                 return BadRequest($"Employee with ID {updatedOrderDto.EmployeeID} does not exist.");
 
+            // A queued order moved to another branch joins the back of that branch's queue
+            if (existingOrder.Status == "Queued" && existingOrder.BranchID != updatedOrderDto.BranchID)
+            {
+                existingOrder.QueuePosition = await NextQueuePositionAsync(updatedOrderDto.BranchID);
+            }
+
             // Update fields
             existingOrder.ItemID = updatedOrderDto.ItemID;
             existingOrder.Quantity = updatedOrderDto.Quantity;
@@ -285,7 +304,8 @@ namespace Artifax.Controllers
                 Status = result.Status,
                 BranchID = result.BranchID,
                 EmployeeID = result.EmployeeID,
-                OrderExpedite = result.OrderExpedite
+                OrderExpedite = result.OrderExpedite,
+                QueuePosition = result.QueuePosition
             };
 
             return Ok(resultDto);
@@ -333,6 +353,16 @@ namespace Artifax.Controllers
                 order.CompletedDateTime = DateTime.UtcNow;
             }
 
+            // Queue position only applies while queued; re-queued orders go to the back
+            if (statusDto.Status == "Queued" && previousStatus != "Queued")
+            {
+                order.QueuePosition = await NextQueuePositionAsync(order.BranchID);
+            }
+            else if (statusDto.Status != "Queued")
+            {
+                order.QueuePosition = null;
+            }
+
             order.Status = statusDto.Status;
 
             // Create history entry
@@ -350,6 +380,36 @@ namespace Artifax.Controllers
             await context.SaveChangesAsync();
 
             return Ok(new { message = "Order status updated successfully." });
+        }
+
+        // PUT /api/Order/branch/{branchId}/queue — Sets the start order of a branch's queued orders.
+        // Body: { orderIds: [...] } listing every queued order in the branch, first-to-start first.
+        // Returns 409 if the list doesn't match the branch's current queue (e.g. an order started meanwhile).
+        [HttpPut("branch/{branchId:int}/queue")]
+        public async Task<IActionResult> ReorderQueue(int branchId, [FromBody] QueueReorderDto reorderDto)
+        {
+            if (reorderDto?.OrderIds == null || reorderDto.OrderIds.Count == 0)
+                return BadRequest("orderIds must list the branch's queued orders.");
+
+            if (reorderDto.OrderIds.Distinct().Count() != reorderDto.OrderIds.Count)
+                return BadRequest("orderIds contains duplicates.");
+
+            var queuedOrders = await context.Orders
+                .Where(o => o.BranchID == branchId && o.Status == "Queued")
+                .ToListAsync();
+
+            if (!queuedOrders.Select(o => o.OrderID).ToHashSet().SetEquals(reorderDto.OrderIds))
+                return Conflict("The queue has changed since it was loaded. Refresh and try again.");
+
+            var ordersById = queuedOrders.ToDictionary(o => o.OrderID);
+            for (int i = 0; i < reorderDto.OrderIds.Count; i++)
+            {
+                ordersById[reorderDto.OrderIds[i]].QueuePosition = i + 1;
+            }
+
+            await context.SaveChangesAsync();
+
+            return Ok(reorderDto.OrderIds.Select((id, i) => new { orderID = id, queuePosition = i + 1 }));
         }
 
         #endregion

@@ -180,6 +180,9 @@ namespace Backend.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("QueuePosition")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("StartedDateTime")
                         .HasColumnType("timestamp with time zone");
 

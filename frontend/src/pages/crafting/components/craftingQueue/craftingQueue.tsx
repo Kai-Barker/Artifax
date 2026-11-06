@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import './craftingQueue.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
@@ -21,6 +21,7 @@ type OrderDto = {
   BranchID?: number;
   employeeID?: number;
   orderExpedite?: boolean;
+  queuePosition?: number | null;
 };
 
 type EmployeeDto = {
@@ -48,7 +49,16 @@ type CraftingJob = {
   createdDateTime: string;
   branchID: number;
   branchName: string;
+  queuePosition: number | null;
 };
+
+// Same order the backend scheduler starts them in: per branch, by queue position, then oldest first.
+function sortQueued(jobs: CraftingJob[]): CraftingJob[] {
+  return jobs.slice().sort((a, b) =>
+    a.branchName.localeCompare(b.branchName)
+    || (a.queuePosition ?? Number.MAX_SAFE_INTEGER) - (b.queuePosition ?? Number.MAX_SAFE_INTEGER)
+    || new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime());
+}
 
 const CraftingQueue: FC = () => {
   const api = useApi();
@@ -132,13 +142,14 @@ const CraftingQueue: FC = () => {
             createdDateTime: order.createdDateTime,
             branchID,
             branchName: branchMapFromApi[branchID] ?? `Branch ${branchID}`,
+            queuePosition: order.queuePosition ?? null,
           };
         });
 
         if (!isMounted) return;
 
         setActiveJobs(jobs.filter((job) => job.status === 'Active' || job.status === 'Paused'));
-        setQueuedJobs(jobs.filter((job) => job.status === 'Queued'));
+        setQueuedJobs(sortQueued(jobs.filter((job) => job.status === 'Queued')));
       } catch (error) {
         console.error('Failed to load crafting queue orders', error);
       }
@@ -177,6 +188,51 @@ const CraftingQueue: FC = () => {
     ? queuedJobs.slice((page - 2) * itemsPerPage, (page - 1) * itemsPerPage)
     : [];
   const activeCount = activeJobs.length;
+
+  const [savingQueue, setSavingQueue] = useState<boolean>(false);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
+  // Each queued job's place within its own branch's queue (queues are per branch).
+  const branchQueuePlace = useMemo(() => {
+    const places: Record<number, { index: number; count: number }> = {};
+    const counts: Record<number, number> = {};
+    queuedJobs.forEach((job) => {
+      const index = counts[job.branchID] ?? 0;
+      counts[job.branchID] = index + 1;
+      places[job.orderID] = { index, count: 0 };
+    });
+    queuedJobs.forEach((job) => {
+      places[job.orderID].count = counts[job.branchID];
+    });
+    return places;
+  }, [queuedJobs]);
+
+  const moveQueued = async (job: CraftingJob, direction: -1 | 1): Promise<void> => {
+    const branchQueue = queuedJobs.filter((queued) => queued.branchID === job.branchID);
+    const index = branchQueue.findIndex((queued) => queued.orderID === job.orderID);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= branchQueue.length) return;
+
+    const reordered = branchQueue.slice();
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const renumbered = reordered.map((queued, i) => ({ ...queued, queuePosition: i + 1 }));
+
+    const previous = queuedJobs;
+    setQueuedJobs(sortQueued([...queuedJobs.filter((queued) => queued.branchID !== job.branchID), ...renumbered]));
+    setSavingQueue(true);
+    setQueueError(null);
+
+    try {
+      await api.put(`/Order/branch/${job.branchID}/queue`, { orderIds: renumbered.map((queued) => queued.orderID) });
+    } catch (error) {
+      console.error(`Failed to reorder queue for branch ${job.branchID}`, error);
+      setQueuedJobs(previous);
+      setQueueError('Could not save the new order. The queue may have changed, so it has been refreshed.');
+    } finally {
+      setSavingQueue(false);
+      window.dispatchEvent(new Event('crafting-order-updated'));
+    }
+  };
 
   const handlePrevious = (): void => setPage((prev) => Math.max(1, prev - 1));
   const handleNext = (): void => setPage((prev) => Math.min(totalPages, prev + 1));
@@ -223,27 +279,53 @@ const CraftingQueue: FC = () => {
       ) : (
         <div className="queue-section">
           <h4 className="queue-section-title">Up Next</h4>
+          {queueError && <p className="queue-error" role="alert">{queueError}</p>}
           {pageItems.length === 0 && <p className="empty-state">No queued items ready yet.</p>}
-          {pageItems.map((item) => (
+          {pageItems.map((item) => {
+            const place = branchQueuePlace[item.orderID] ?? { index: 0, count: 1 };
+            return (
             <div key={item.orderID} className="queue-item">
               <div className="queue-item-header">
                 <div className="item-info">
                   <img src={unitIconSrc} alt={`${item.name} icon`} className="queue-item-icon" />
                   <div>
                     <h4>{item.name} x{item.qty} · {item.branchName}</h4>
-                    <p>Queued · Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdDateTime))}</p>
+                    <p>#{place.index + 1} in queue · Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdDateTime))}</p>
                   </div>
                 </div>
-                <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
-                  {item.status}
-                </span>
+                <div className="queue-item-actions">
+                  <div className="queue-move" role="group" aria-label={`Move ${item.name} in queue`}>
+                    <button
+                      type="button"
+                      onClick={() => void moveQueued(item, -1)}
+                      disabled={savingQueue || place.index === 0}
+                      aria-label={`Move ${item.name} earlier`}
+                      title="Start earlier"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void moveQueued(item, 1)}
+                      disabled={savingQueue || place.index >= place.count - 1}
+                      aria-label={`Move ${item.name} later`}
+                      title="Start later"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
+                    {item.status}
+                  </span>
+                </div>
               </div>
               <div className="waiting-status">
                 <span>Waiting to start</span>
                 <span>{item.timeLeft}</span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

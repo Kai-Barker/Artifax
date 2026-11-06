@@ -14,6 +14,7 @@ namespace Artifax.DTOs
         public int BranchID { get; set; }
         public int EmployeeID { get; set; }
         public bool OrderExpedite { get; set; }
+        public int? QueuePosition { get; set; }
         public string Status { get; set; } = string.Empty;
     }
 }

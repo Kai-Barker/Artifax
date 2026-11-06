@@ -1325,6 +1325,92 @@ namespace Backend.Tests
         }
 
         #endregion
+
+        #region Queue Order Tests
+
+        private Order AddQueuedOrder(int branchId, int? position)
+        {
+            var order = new Order
+            {
+                ItemID = 1,
+                Quantity = 1,
+                Status = "Queued",
+                CreatedDateTime = DateTime.UtcNow,
+                TotalTime = 15,
+                BranchID = branchId,
+                EmployeeID = 1,
+                QueuePosition = position
+            };
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+            return order;
+        }
+
+        [Fact]
+        public async Task CreateOrder_Queued_GoesToBackOfBranchQueue()
+        {
+            AddQueuedOrder(1, 1);
+            AddQueuedOrder(1, 2);
+            AddQueuedOrder(2, 7); // other branch must not affect branch 1
+
+            var result = await _controller.CreateOrder(new OrderCreateDto { ItemID = 1, Quantity = 1, BranchID = 1, EmployeeID = 1 });
+
+            var created = Assert.IsType<OrderReadDto>(Assert.IsType<CreatedAtActionResult>(result).Value);
+            Assert.Equal("Queued", created.Status);
+            Assert.Equal(3, created.QueuePosition);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_SetsPositionsInGivenOrder()
+        {
+            var a = AddQueuedOrder(1, 1);
+            var b = AddQueuedOrder(1, 2);
+            var c = AddQueuedOrder(1, 3);
+
+            var result = await _controller.ReorderQueue(1, new QueueReorderDto { OrderIds = new List<int> { c.OrderID, a.OrderID, b.OrderID } });
+
+            Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(1, _context.Orders.Find(c.OrderID).QueuePosition);
+            Assert.Equal(2, _context.Orders.Find(a.OrderID).QueuePosition);
+            Assert.Equal(3, _context.Orders.Find(b.OrderID).QueuePosition);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_WhenListDoesNotMatchQueue_ReturnsConflict()
+        {
+            var a = AddQueuedOrder(1, 1);
+            AddQueuedOrder(1, 2); // missing from the request, e.g. added by someone else
+
+            var result = await _controller.ReorderQueue(1, new QueueReorderDto { OrderIds = new List<int> { a.OrderID } });
+
+            Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(1, _context.Orders.Find(a.OrderID).QueuePosition);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_WithDuplicateIds_ReturnsBadRequest()
+        {
+            var a = AddQueuedOrder(1, 1);
+
+            var result = await _controller.ReorderQueue(1, new QueueReorderDto { OrderIds = new List<int> { a.OrderID, a.OrderID } });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task UpdateOrderStatus_LeavingQueue_ClearsPosition_AndRequeueGoesToBack()
+        {
+            var a = AddQueuedOrder(1, 1);
+            AddQueuedOrder(1, 2);
+
+            await _controller.UpdateOrderStatus(a.OrderID, new OrderStatusUpdateDto { Status = "Paused" });
+            Assert.Null(_context.Orders.Find(a.OrderID).QueuePosition);
+
+            await _controller.UpdateOrderStatus(a.OrderID, new OrderStatusUpdateDto { Status = "Queued" });
+            Assert.Equal(3, _context.Orders.Find(a.OrderID).QueuePosition);
+        }
+
+        #endregion
     }
 
     // Helper classes for async LINQ operations
