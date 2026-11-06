@@ -5,6 +5,14 @@ import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { useCurrentUser } from '../../../../utils/currentUser';
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
+import { showError } from '../../../../utils/toast';
+import axios from 'axios';
+
+// Matches the backend rule (OrderController.UpdateOrderStatus / OrderTimeTrackingService).
+const MAX_ACTIVE_PER_BRANCH = 3;
+
+const activeLimitMessage = (job: { name: string; branchName: string }): string =>
+  `Can't resume ${job.name}. ${job.branchName} already has ${MAX_ACTIVE_PER_BRANCH} crafts in progress. Pause or finish one first.`;
 
 interface TiltsState {
   [key: string]: string;
@@ -240,12 +248,35 @@ const CraftingItems: FC = () => {
 
   const handlePauseResume = async (job: CraftingJob): Promise<void> => {
     const nextStatus = job.status === 'Paused' ? 'Active' : 'Paused';
+
+    // Resuming needs a free slot at the order's branch; check before calling the API.
+    if (nextStatus === 'Active') {
+      const activeAtBranch = activeJobs.filter((other) => other.branchID === job.branchID && other.status === 'Active').length;
+      if (activeAtBranch >= MAX_ACTIVE_PER_BRANCH) {
+        showError(activeLimitMessage(job));
+        return;
+      }
+    }
+
     try {
       await api.put(`/Order/${job.orderID}/status`, { status: nextStatus });
       window.dispatchEvent(new CustomEvent('crafting-order-updated'));
       await loadActiveJobs();
     } catch (error) {
       console.error(`Unable to update order ${job.orderID} status to ${nextStatus}`, error);
+
+      // The backend also enforces the limit (e.g. a queued order started in the meantime).
+      const isLimitError = nextStatus === 'Active'
+        && axios.isAxiosError(error)
+        && error.response?.status === 400
+        && String(error.response.data ?? '').includes('active orders');
+
+      if (isLimitError) {
+        showError(activeLimitMessage(job));
+        await loadActiveJobs();
+      } else {
+        showError(`Unable to ${nextStatus === 'Active' ? 'resume' : 'pause'} ${job.name}. Please try again.`);
+      }
     }
   };
 
@@ -315,7 +346,7 @@ const CraftingItems: FC = () => {
               </label>
               <div className="expedite-labels">
                 <span className="expedite-title">Order Expedite</span>
-                <span className="expedite-status">{job.expedited ? 'Half time active' : 'Standard production'}</span>
+                <span className="expedite-status">{job.expedited ? 'Double speed · remaining time halved' : 'Standard production'}</span>
               </div>
             </div>
           </div>
