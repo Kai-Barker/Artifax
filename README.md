@@ -156,10 +156,72 @@ After the original project submission, I made the following improvements in this
 | Area | At submission | Now |
 |---|---|---|
 | Test suite | 35 of 39 frontend tests passing; 77 backend tests; ~30% backend line coverage | 336 frontend and 169 backend tests, all passing; 100% backend coverage, 98% frontend (see below) |
-| Low-stock alerts | A bug showed every warehouse's low-stock alerts to all warehouses | Each warehouse now only sees its own low-stock alerts |
+| Low-stock alerts | A bug showed every warehouse's low-stock alerts to all warehouses | Each warehouse now only sees its own low-stock alerts, with an all-branches view |
+| Expediting | Expediting halved the order's total time instead of its remaining time | Expediting now halves the remaining time |
+| Crafting queue | Queued orders started strictly in the order they were added | Queued orders can be moved up or down to choose what starts next |
+| Toasts | Default toast styling; no warning when a branch was already at its crafting limit | Toasts styled to match the app, plus an error toast when resuming an order while 3 crafts are running |
 | Bugs found by the new tests | — | Fixed: queued orders being started repeatedly by the scheduler, inventory edits saving to the wrong branch, dashboard jobs showing "Order N" instead of item names, light theme not being remembered, and more |
 
 The Test Coverage figures above describe the project as it was at submission.
+
+### Before and after
+
+**Low-stock alerts.** Every branch's alerts used to appear at every warehouse. Each branch now sees only its own, and an all-branches view shows the rest.
+
+<table>
+  <tr><th width="50%">Before</th><th width="50%">After</th></tr>
+  <tr>
+    <td><img src="readme-images/since-submission/low-stock-before.jpg" alt="Low-stock alerts before: every branch's alerts shown"></td>
+    <td><img src="readme-images/since-submission/low-stock-after.jpg" alt="Low-stock alerts after: only the current branch's alerts"></td>
+  </tr>
+  <tr><td colspan="2" align="center"><img src="readme-images/since-submission/low-stock-all-branches.jpg" alt="All-branches low-stock view" width="70%"><br><em>The new all-branches view</em></td></tr>
+</table>
+
+**Expediting.** A frontend bug halved the order's total time instead of its remaining time.
+
+<table>
+  <tr><th width="60%">Before</th><th width="40%">After</th></tr>
+  <tr>
+    <td><img src="readme-images/since-submission/expedite-before-1.jpg" alt="Order before expediting" width="49%"> <img src="readme-images/since-submission/expedite-before-2.jpg" alt="Order after expediting with the bug: total time halved" width="49%"></td>
+    <td><img src="readme-images/since-submission/expedite-after.jpg" alt="Expedite after the fix: remaining time halved"></td>
+  </tr>
+</table>
+
+**Crafting queue.** Queued orders can now be moved up or down to choose what starts next.
+
+<table>
+  <tr><th width="33%">Before</th><th width="67%">After</th></tr>
+  <tr>
+    <td><img src="readme-images/since-submission/queue-before.jpg" alt="Crafting queue before: no reordering"></td>
+    <td><img src="readme-images/since-submission/queue-after-1.jpg" alt="Crafting queue with reorder arrows" width="49%"> <img src="readme-images/since-submission/queue-after-2.jpg" alt="Crafting queue after moving an order" width="49%"></td>
+  </tr>
+</table>
+
+**Editing inventory items.** Editing an item always opened the first branch's row, so saving overwrote that branch's quantity. It now edits the branch you clicked and shows that branch in the edit card.
+
+<p align="center"><img src="readme-images/since-submission/edit-item-branch-fix.jpg" alt="Edit item card showing the selected branch" width="60%"></p>
+
+**Toasts.** Toasts now match the app's styling, and an error toast explains why an order can't resume while its branch already has 3 crafts in progress.
+
+<table>
+  <tr><th>Before</th><th>After</th><th>New error toast</th></tr>
+  <tr>
+    <td><img src="readme-images/since-submission/toast-before.jpg" alt="Default success toast"></td>
+    <td><img src="readme-images/since-submission/toast-after.jpg" alt="Restyled success toast"></td>
+    <td><img src="readme-images/since-submission/toast-error.jpg" alt="Error toast: branch already has 3 crafts in progress"></td>
+  </tr>
+</table>
+
+**Test coverage.** Backend line coverage went from 30.2% to 100%, and frontend statement coverage from 57.39% to 98.05%.
+
+<table>
+  <tr><th width="50%">Backend before</th><th width="50%">Backend after</th></tr>
+  <tr>
+    <td><img src="readme-images/since-submission/tests-backend-before.jpg" alt="Backend coverage before: 30.2% line coverage"></td>
+    <td><img src="readme-images/since-submission/tests-backend-after.jpg" alt="Backend coverage after: 100% line and branch coverage"></td>
+  </tr>
+  <tr><td colspan="2" align="center"><img src="readme-images/since-submission/tests-frontend-after.jpg" alt="Frontend coverage after: 98.05% statements, 92.26% branches, 98.57% functions, 98.45% lines" width="80%"><br><em>Frontend coverage after (at submission: 57.39% statements, 43.63% branches, 56.41% functions, 57.9% lines)</em></td></tr>
+</table>
 
 ### Test coverage now
 
