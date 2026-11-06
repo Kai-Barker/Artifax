@@ -14,7 +14,7 @@ import NewBlueprint from './components/newBlueprint/newBlueprint';
 import BlueprintEdit from './components/blueprintEdit/BlueprintEdit';
 import { useApi } from '../../hooks';
 import { showError, showSuccess } from '../../utils/toast';
-import { getInventoryOverview } from '../../services/inventoryApi';
+import { getInventoryOverview, type InventoryItem } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import { useCurrentUser } from '../../utils/currentUser';
@@ -205,7 +205,7 @@ const Crafting: FC = () => {
   const [orderExpedite, setOrderExpedite] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [editItemId, setEditItemId] = useState<number | null>(null);
-  const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [blueprintRefreshKey, setBlueprintRefreshKey] = useState<number>(0);
   const api = useApi();
   const currentUser = useCurrentUser();
@@ -400,7 +400,7 @@ const Crafting: FC = () => {
     const loadLowStock = async (): Promise<void> => {
       try {
         const overview = await getInventoryOverview();
-        setLowStockAlerts(overview.alerts);
+        setInventoryItems(overview.items);
       } catch (error) {
         console.error('Failed to load low stock alerts', error);
       }
@@ -416,7 +416,7 @@ const Crafting: FC = () => {
           title="Crafting Management"
           subtitle={`Crafting Dashboard · ${currentDate}`}
         />
-        <AlertStrip label={`Low Stock: ${lowStockAlerts.length}`} items={lowStockAlerts} />
+        <AlertStrip items={inventoryItems} />
 
         <div className="crafting-page">
           {activeTab === 'active' && <ActiveJobsPage />}

@@ -86,7 +86,7 @@ function DashboardPage() {
     <div className="space-y-4 sm:space-y-5">
       <PageHeader title="Inventory & Crafting" subtitle={`Main Dashboard · ${currentDate}`} />
 
-      <AlertStrip label={`Low Stock: ${inventoryOverview.alerts.length}`} items={inventoryOverview.alerts} />
+      <AlertStrip items={inventoryOverview.items} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {inventoryOverview.stats.map((stat) => (

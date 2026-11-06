@@ -13,10 +13,12 @@ import InventoryItemEditModal from './components/InventoryItemEditModal';
 import InventoryItemCreateModal from './components/InventoryItemCreateModal';
 import InventoryItemIngredientModal from './components/InventoryItemIngredientModal';
 import { createInventoryItem, getItemCategoryOptions, getItems, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
-import { getCurrentUserFromSession } from '../../services/authApi'; // <-- Adjust path if needed
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
+
+// One inventory row = one item at one branch. Item IDs repeat across branches.
+const inventoryRowKey = (item: InventoryItem): string => `${item.id}-${item.branchId}`;
 
 function InventoryPage() {
   const currentDate = getCurrentDateSAST();
@@ -28,17 +30,15 @@ function InventoryPage() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [inventoryOverview, setInventoryOverview] = useState<InventoryOverview>({ items: [], previewRows: [], alerts: [], stats: [], tabs: [] });
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
-  const [expandedViewItemId, setExpandedViewItemId] = useState<number | null>(null);
+  // Rows are one item at one branch, so row actions must track both (see inventoryRowKey).
+  const [expandedViewRowKey, setExpandedViewRowKey] = useState<string | null>(null);
   const [materialDetailsById, setMaterialDetailsById] = useState<Record<number, InventoryMaterialDetails | null>>({});
   const [loadingMaterialItemId, setLoadingMaterialItemId] = useState<number | null>(null);
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingRow, setEditingRow] = useState<{ itemId: number; branchId: number } | null>(null);
   const [savingEditItemId, setSavingEditItemId] = useState<number | null>(null);
   const [creatingItem, setCreatingItem] = useState(false);
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [ingredientItem, setIngredientItem] = useState<InventoryCreatedItem | null>(null);
-
-  // Added state to track the logged-in user's branch
-  const [loggedInBranchId, setLoggedInBranchId] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -60,30 +60,17 @@ function InventoryPage() {
         }
       });
 
-    // Fetch Logged-in User
-    getCurrentUserFromSession()
-      .then((user) => {
-        if (mounted && user) {
-          // Safely extract branchId (handling potential naming variations)
-          const branchId = (user as any).branchId ?? (user as any).BranchId;
-          if (branchId) {
-            setLoggedInBranchId(Number(branchId));
-          }
-        }
-      })
-      .catch((error) => console.warn('Could not load user session for branch filtering', error));
-
     return () => {
       mounted = false;
     };
   }, []);
 
   const closeExpandedView = (): void => {
-    setExpandedViewItemId(null);
+    setExpandedViewRowKey(null);
   };
 
   const closeEditModal = (): void => {
-    setEditingItemId(null);
+    setEditingRow(null);
   };
 
   const openCreateModal = (): void => {
@@ -100,13 +87,16 @@ function InventoryPage() {
 
   const handleViewClick = async (item: InventoryItem): Promise<void> => {
     const numericItemId = Number(item.id);
+    const rowKey = inventoryRowKey(item);
 
-    if (expandedViewItemId === numericItemId) {
+    if (expandedViewRowKey === rowKey) {
       closeExpandedView();
       return;
     }
 
-    setExpandedViewItemId(numericItemId);
+    setExpandedViewRowKey(rowKey);
+
+    // Materials come from the item's blueprint, so they're cached per item, not per branch row.
 
     if (Number.isNaN(numericItemId) || materialDetailsById[numericItemId] !== undefined) {
       return;
@@ -127,7 +117,7 @@ function InventoryPage() {
 
   const handleEditClick = (item: InventoryItem): void => {
     closeExpandedView();
-    setEditingItemId(Number(item.id));
+    setEditingRow({ itemId: Number(item.id), branchId: item.branchId });
   };
 
   const handleSaveEdit = async (itemId: number, payload: InventoryItemUpdate): Promise<void> => {
@@ -138,7 +128,7 @@ function InventoryPage() {
       const overview = await getInventoryOverview();
       setInventoryItems(overview.items);
       setInventoryOverview(overview);
-      setEditingItemId(null);
+      setEditingRow(null);
     } catch (error) {
       console.error(`Failed to save item ${itemId}`, error);
       throw error;
@@ -176,18 +166,6 @@ function InventoryPage() {
       ...locations.filter(Boolean).map((location) => ({ label: `Location: ${location}`, value: location })),
     ];
   }, [sourceItems]);
-
-  // FIX 2: Reconstruct alerts based on branchId rather than relying on the pre-formatted strings
-  const filteredAlerts = useMemo(() => {
-    if (!loggedInBranchId) {
-      // Fallback: If no branch ID is loaded (e.g. an Admin user), show all alerts
-      return inventoryOverview.alerts;
-    }
-
-    return inventoryOverview.items
-      .filter((item) => item.status === 'LOW' && item.branchId === loggedInBranchId)
-      .map((item) => `${item.name} (${item.quantity} remaining)`);
-  }, [inventoryOverview.items, inventoryOverview.alerts, loggedInBranchId]);
 
   const filteredItems = useMemo(() => {
     const searchLower = search.toLowerCase();
@@ -263,7 +241,7 @@ function InventoryPage() {
         }
       />
 
-      <AlertStrip label={`Low Stock: ${filteredAlerts.length}`} items={filteredAlerts} />
+      <AlertStrip items={inventoryOverview.items} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {inventoryOverview.stats.map((stat) => (
@@ -314,7 +292,7 @@ function InventoryPage() {
               <tbody>
                 {filteredItems.map((item, index) => {
                   const itemId = Number(item.id);
-                  const isExpanded = expandedViewItemId === itemId;
+                  const isExpanded = expandedViewRowKey === inventoryRowKey(item);
                   const uniqueRowKey = `${item.id}-${item.location || 'none'}-${index}`;
 
                   return (
@@ -385,9 +363,11 @@ function InventoryPage() {
             ) : null}
           </div>
           <InventoryItemEditModal
-            item={editingItemId != null ? sourceItems.find((candidate) => Number(candidate.id) === editingItemId) ?? null : null}
-            open={editingItemId != null}
-            saving={savingEditItemId === editingItemId}
+            item={editingRow != null
+              ? sourceItems.find((candidate) => Number(candidate.id) === editingRow.itemId && candidate.branchId === editingRow.branchId) ?? null
+              : null}
+            open={editingRow != null}
+            saving={editingRow != null && savingEditItemId === editingRow.itemId}
             onClose={closeEditModal}
             onSave={handleSaveEdit}
             categoryOptions={categoryOptions}
