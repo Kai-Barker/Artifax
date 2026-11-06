@@ -112,9 +112,10 @@ function Topbar() {
       return;
     }
 
-    // disable theme and remove saved preference
+    // Disable the theme and remember the choice. (Removing the key instead would make the
+    // next load fall back to the synthwave default, so light mode wouldn't stick.)
     document.documentElement.removeAttribute('data-theme');
-    localStorage.removeItem('theme');
+    localStorage.setItem('theme', 'light');
   };
 
   return (

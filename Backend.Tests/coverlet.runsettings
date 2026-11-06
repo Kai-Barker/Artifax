@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Code coverage settings for the backend tests.
+  Usage: see "Running the tests" in README.md (pass this file to dotnet test with the settings option
+  and collect "XPlat Code Coverage").
+
+  Only hand-written application code in the Backend assembly is measured.
+  Excluded because they are generated rather than part of the codebase:
+    - EF Core migrations (Backend/Migrations)
+    - Source-generator output under obj/ (e.g. OpenApiXmlCommentSupport.generated.cs)
+    - Anything marked [GeneratedCode], [CompilerGenerated] or [ExcludeFromCodeCoverage]
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Backend]*</Include>
+          <Exclude>[Backend.Tests]*,[Backend]Backend.Migrations.*</Exclude>
+          <ExcludeByFile>**/Migrations/*.cs,**/obj/**/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <SkipAutoProps>false</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

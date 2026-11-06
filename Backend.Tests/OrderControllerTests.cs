@@ -143,7 +143,7 @@ namespace Backend.Tests
             var orders = Assert.IsAssignableFrom<IEnumerable<OrderReadDto>>(okResult.Value);
             var order_dto = orders.First();
             
-            Assert.NotNull(order_dto.CreatedDateTime);
+            Assert.NotEqual(default, order_dto.CreatedDateTime);
             Assert.NotNull(order_dto.StartedDateTime);
             Assert.Equal(5, order_dto.Quantity);
             Assert.Equal(75, order_dto.TotalTime);
@@ -222,7 +222,7 @@ namespace Backend.Tests
             Assert.Equal(4, orderDto.Quantity);
             Assert.Equal(120, orderDto.TotalTime);
             Assert.Equal(60, orderDto.TimeElapsed);
-            Assert.NotNull(orderDto.CreatedDateTime);
+            Assert.NotEqual(default, orderDto.CreatedDateTime);
             Assert.NotNull(orderDto.StartedDateTime);
             Assert.Null(orderDto.CompletedDateTime);
         }
@@ -1408,6 +1408,136 @@ namespace Backend.Tests
 
             await _controller.UpdateOrderStatus(a.OrderID, new OrderStatusUpdateDto { Status = "Queued" });
             Assert.Equal(3, _context.Orders.Find(a.OrderID).QueuePosition);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_WithNullBody_ReturnsBadRequest()
+        {
+            var result = await _controller.ReorderQueue(1, null);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_WithNullOrderIds_ReturnsBadRequest()
+        {
+            var result = await _controller.ReorderQueue(1, new QueueReorderDto { OrderIds = null });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task ReorderQueue_WithEmptyOrderIds_ReturnsBadRequest()
+        {
+            AddQueuedOrder(1, 1);
+
+            var result = await _controller.ReorderQueue(1, new QueueReorderDto { OrderIds = new List<int>() });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_QueuedOrderMovedToAnotherBranch_JoinsBackOfThatQueue()
+        {
+            AddQueuedOrder(2, 1);
+            AddQueuedOrder(2, 2);
+            var moving = AddQueuedOrder(1, 1);
+
+            var result = await _controller.UpdateOrder(moving.OrderID, new OrderCreateDto { ItemID = 1, Quantity = 1, BranchID = 2, EmployeeID = 1 });
+
+            var dto = Assert.IsType<OrderReadDto>(Assert.IsType<OkObjectResult>(result).Value);
+            Assert.Equal(2, dto.BranchID);
+            Assert.Equal(3, dto.QueuePosition);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_QueuedOrderSameBranch_KeepsQueuePosition()
+        {
+            AddQueuedOrder(1, 1);
+            var order = AddQueuedOrder(1, 2);
+
+            var result = await _controller.UpdateOrder(order.OrderID, new OrderCreateDto { ItemID = 2, Quantity = 3, BranchID = 1, EmployeeID = 1 });
+
+            var dto = Assert.IsType<OrderReadDto>(Assert.IsType<OkObjectResult>(result).Value);
+            Assert.Equal(2, dto.QueuePosition);
+            Assert.Equal(90, dto.TotalTime);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_ActiveOrderMovedToAnotherBranch_GetsNoQueuePosition()
+        {
+            var order = new Order { ItemID = 1, Quantity = 1, Status = "Active", CreatedDateTime = DateTime.UtcNow, TotalTime = 15, BranchID = 1, EmployeeID = 1 };
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+
+            var result = await _controller.UpdateOrder(order.OrderID, new OrderCreateDto { ItemID = 1, Quantity = 1, BranchID = 2, EmployeeID = 1 });
+
+            var dto = Assert.IsType<OrderReadDto>(Assert.IsType<OkObjectResult>(result).Value);
+            Assert.Equal(2, dto.BranchID);
+            Assert.Null(dto.QueuePosition);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_WithUnknownItem_ReturnsBadRequest()
+        {
+            var order = AddQueuedOrder(1, 1);
+
+            var result = await _controller.UpdateOrder(order.OrderID, new OrderCreateDto { ItemID = 999, Quantity = 1, BranchID = 1, EmployeeID = 1 });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_WithUnknownBranch_ReturnsBadRequest()
+        {
+            var order = AddQueuedOrder(1, 1);
+
+            var result = await _controller.UpdateOrder(order.OrderID, new OrderCreateDto { ItemID = 1, Quantity = 1, BranchID = 999, EmployeeID = 1 });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(1, _context.Orders.Find(order.OrderID).BranchID);
+        }
+
+        [Fact]
+        public async Task UpdateOrder_WithUnknownEmployee_ReturnsBadRequest()
+        {
+            var order = AddQueuedOrder(1, 1);
+
+            var result = await _controller.UpdateOrder(order.OrderID, new OrderCreateDto { ItemID = 1, Quantity = 1, BranchID = 1, EmployeeID = 999 });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task GetOrderAndAllOrders_ForItemWithoutName_ShowUnknownItemName()
+        {
+            _context.Items.Add(new Item { ItemID = 5, ItemName = null, ItemCategory = "Others", ProductionTime = 5 });
+            var order = new Order { ItemID = 5, Quantity = 1, Status = "Queued", CreatedDateTime = DateTime.UtcNow, BranchID = 1, EmployeeID = 1 };
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+
+            var single = await _controller.GetOrderById(order.OrderID);
+            var all = await _controller.GetAllOrders();
+
+            Assert.Equal("Unknown", Assert.IsType<OrderReadDto>(Assert.IsType<OkObjectResult>(single).Value).ItemName);
+            var list = Assert.IsAssignableFrom<IEnumerable<OrderReadDto>>(Assert.IsType<OkObjectResult>(all).Value);
+            Assert.Equal("Unknown", Assert.Single(list, o => o.OrderID == order.OrderID).ItemName);
+        }
+
+        [Fact]
+        public async Task CreateAndUpdateOrder_ForItemWithoutName_ShowUnknownItemName()
+        {
+            _context.Items.Add(new Item { ItemID = 4, ItemName = null, ItemCategory = "Others", ProductionTime = 5 });
+            _context.SaveChanges();
+
+            var createResult = await _controller.CreateOrder(new OrderCreateDto { ItemID = 4, Quantity = 2, BranchID = 1, EmployeeID = 1 });
+            var created = Assert.IsType<OrderReadDto>(Assert.IsType<CreatedAtActionResult>(createResult).Value);
+            Assert.Equal("Unknown", created.ItemName);
+
+            var updateResult = await _controller.UpdateOrder(created.OrderID, new OrderCreateDto { ItemID = 4, Quantity = 3, BranchID = 1, EmployeeID = 1 });
+            var updated = Assert.IsType<OrderReadDto>(Assert.IsType<OkObjectResult>(updateResult).Value);
+            Assert.Equal("Unknown", updated.ItemName);
+            Assert.Equal(15, updated.TotalTime);
         }
 
         #endregion

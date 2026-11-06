@@ -111,7 +111,8 @@ function DashboardPage() {
                 </thead>
                 <tbody>
                   {previewRows.map((row) => (
-                    <tr key={row.id} className="border-b border-border/70">
+                    // Item ids repeat across branches, so include the location in the key.
+                    <tr key={`${row.id}-${row.location}`} className="border-b border-border/70">
                       <td className="dashboard-material-column py-2.5 font-medium text-text">{row.name}</td>
                       <td className="qty-column py-2.5 text-text"><span className="qty-value">{row.qty}</span></td>
                       <td className="dashboard-location-column py-2.5 text-muted"><span className="location-value">{row.location}</span></td>

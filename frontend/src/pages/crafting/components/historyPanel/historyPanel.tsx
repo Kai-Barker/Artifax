@@ -100,14 +100,16 @@ const HistoryPanel: FC = () => {
 
     return historyData
       .filter((order) => {
-        const status = (order.status || 'Unknown').toLowerCase();
+        // Treat spelling variants as one status, matching how the tab counts are worked out.
+        const raw = (order.status || 'Unknown').toLowerCase();
+        const status = raw === 'completed' ? 'complete' : raw === 'canceled' ? 'cancelled' : raw;
         const normActive = activeTab.toLowerCase();
         const normFilter = statusFilter.toLowerCase();
         if (activeTab !== 'All' && status !== normActive) return false;
         if (statusFilter !== 'All' && status !== normFilter) return false;
 
         if (!normalizedSearch) return true;
-        return [order.itemName, order.employeeName || '', status]
+        return [order.itemName, order.employeeName || '', raw]
           .some((value) => value.toLowerCase().includes(normalizedSearch));
       })
       .sort((a, b) => {

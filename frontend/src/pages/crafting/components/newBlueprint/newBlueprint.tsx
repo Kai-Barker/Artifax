@@ -39,7 +39,9 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
   const [craftTimeMinutes, setCraftTimeMinutes] = useState(1);
   const [price, setPrice] = useState<number>(0);
   const [materials, setMaterials] = useState<MaterialRow[]>([
-    { id: 'mat-1', item: 'Metal', amount: 1 },
+    // All rows start empty: a preset value that isn't in the item list would be shown as
+    // "None selected" yet still be submitted, creating a stray item.
+    { id: 'mat-1', item: '', amount: 1 },
     { id: 'mat-2', item: '', amount: 1 },
     { id: 'mat-3', item: '', amount: 1 },
   ]);

@@ -155,10 +155,41 @@ After the original project submission, I made the following improvements in this
 
 | Area | At submission | Now |
 |---|---|---|
-| Test suite | 35 of 39 frontend tests passing; the 4 failures covered features still in progress | Improved the test suite and fixed the failing frontend tests |
+| Test suite | 35 of 39 frontend tests passing; 77 backend tests; ~30% backend line coverage | 336 frontend and 169 backend tests, all passing; 100% backend coverage, 98% frontend (see below) |
 | Low-stock alerts | A bug showed every warehouse's low-stock alerts to all warehouses | Each warehouse now only sees its own low-stock alerts |
+| Bugs found by the new tests | — | Fixed: queued orders being started repeatedly by the scheduler, inventory edits saving to the wrong branch, dashboard jobs showing "Order N" instead of item names, light theme not being remembered, and more |
 
 The Test Coverage figures above describe the project as it was at submission.
+
+### Test coverage now
+
+| | Tests | Lines | Branches | Functions / methods |
+|---|---|---|---|---|
+| Backend (xUnit) | 169 passed, 0 failed | 100% | 100% | 100% |
+| Frontend (Jest) | 336 passed, 0 failed | 98.5% | 92.3% | 98.6% |
+
+**What's measured.** Coverage only counts code that's part of the application:
+- **Backend:** excludes EF Core migrations, generated code under `obj/`, and compiler-generated members such as auto-properties. See `Backend.Tests/coverlet.runsettings`.
+- **Frontend:** covers the code that calls the backend or works with its data, in both styles the project uses: `services/` and components that fetch data themselves. It excludes entry files, static data and config, purely presentational components, and unused files. See `jest.collectCoverageFrom` in `frontend/package.json`.
+
+The frontend run fails if any metric drops below 80%.
+
+**How it's tested.**
+- **Backend:** unit tests per controller, with positive and negative cases (success, not found, unauthorized, bad request, conflict) against an in-memory database. Tests for the background order scheduler. Integration tests that boot the real app with `WebApplicationFactory` to cover startup, CORS, sessions and configuration.
+- **Frontend:** tests check that backend data appears correctly, including empty and error states, and that actions send the right requests. All backend data is mocked: axios is replaced by `src/__mocks__/axios.js`, with shared fixtures in `src/test-utils/`.
+
+**Running the tests**
+```powershell
+# Backend (stop the running API first; it locks the build output)
+dotnet test Backend.Tests --settings Backend.Tests/coverlet.runsettings --collect:"XPlat Code Coverage"
+reportgenerator -reports:"Backend.Tests/TestResults/<run-id>/coverage.cobertura.xml" -targetdir:coveragereport-fork -reporttypes:Html
+
+# Frontend
+cd frontend
+npm run test:coverage    # report: frontend/coverage/lcov-report/index.html
+```
+
+The original team report is kept in `coveragereport/` for comparison. This fork's backend report is in `coveragereport-fork/`.
 
 ### Future Improvements
 - **Act on low-stock alerts directly:** click an alert to restock the item or start a craft.

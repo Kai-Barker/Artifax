@@ -43,8 +43,9 @@ async function withAxios<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
       const responseData = error.response?.data;
+      // Empty bodies (e.g. a bare 404 from NotFound()) fall back to a status message.
       const message =
-        typeof responseData === 'string'
+        typeof responseData === 'string' && responseData.trim()
           ? responseData
           : (responseData as { message?: string } | undefined)?.message || `Request failed: ${status ?? 'unknown'}`;
 

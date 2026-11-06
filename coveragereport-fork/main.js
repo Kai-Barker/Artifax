@@ -290,43 +290,19 @@ var assemblies = [
   {
     "name": "Backend",
     "classes": [
-      { "name": "Artifax.Controllers.BranchController", "rp": "Backend_BranchController.html", "cl": 0, "ucl": 47, "cal": 47, "tl": 102, "cb": 0, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Controllers.ItemController", "rp": "Backend_ItemController.html", "cl": 239, "ucl": 72, "cal": 311, "tl": 432, "cb": 34, "tb": 42, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Controllers.OrderController", "rp": "Backend_OrderController.html", "cl": 278, "ucl": 7, "cal": 285, "tl": 440, "cb": 80, "tb": 100, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Controllers.UserController", "rp": "Backend_UserController.html", "cl": 38, "ucl": 95, "cal": 133, "tl": 296, "cb": 10, "tb": 40, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Data.ArtifaxContext", "rp": "Backend_ArtifaxContext.html", "cl": 34, "ucl": 0, "cal": 34, "tl": 55, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.BranchDto", "rp": "Backend_BranchDto.html", "cl": 0, "ucl": 18, "cal": 18, "tl": 32, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.BranchItemCapacityReadDto", "rp": "Backend_BranchItemCapacityReadDto.html", "cl": 14, "ucl": 0, "cal": 14, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.BranchItemCapacityWriteDto", "rp": "Backend_BranchItemCapacityWriteDto.html", "cl": 3, "ucl": 0, "cal": 3, "tl": 10, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.CurrentUserDto", "rp": "Backend_CurrentUserDto.html", "cl": 0, "ucl": 3, "cal": 3, "tl": 11, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.EmployeeReadDto", "rp": "Backend_EmployeeReadDto.html", "cl": 16, "ucl": 0, "cal": 16, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.EmployeeWriteDto", "rp": "Backend_EmployeeWriteDto.html", "cl": 0, "ucl": 5, "cal": 5, "tl": 11, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.IngredientBlueprintReadDto", "rp": "Backend_IngredientBlueprintReadDto.html", "cl": 4, "ucl": 1, "cal": 5, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.IngredientBlueprintWriteDto", "rp": "Backend_IngredientBlueprintWriteDto.html", "cl": 2, "ucl": 0, "cal": 2, "tl": 10, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.InventoryItemReadDto", "rp": "Backend_InventoryItemReadDto.html", "cl": 0, "ucl": 19, "cal": 19, "tl": 27, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemBlueprintReadDto", "rp": "Backend_ItemBlueprintReadDto.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemBlueprintWriteDto", "rp": "Backend_ItemBlueprintWriteDto.html", "cl": 3, "ucl": 1, "cal": 4, "tl": 12, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemIngredientReadDto", "rp": "Backend_ItemIngredientReadDto.html", "cl": 14, "ucl": 0, "cal": 14, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemIngredientWriteDto", "rp": "Backend_ItemIngredientWriteDto.html", "cl": 3, "ucl": 0, "cal": 3, "tl": 10, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemReadDto", "rp": "Backend_ItemReadDto.html", "cl": 16, "ucl": 0, "cal": 16, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.ItemWriteDto", "rp": "Backend_ItemWriteDto.html", "cl": 4, "ucl": 0, "cal": 4, "tl": 11, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.LoginDto", "rp": "Backend_LoginDto.html", "cl": 2, "ucl": 0, "cal": 2, "tl": 8, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.OrderCreateDto", "rp": "Backend_OrderCreateDto.html", "cl": 5, "ucl": 0, "cal": 5, "tl": 11, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.OrderHistoryCreateDto", "rp": "Backend_OrderHistoryCreateDto.html", "cl": 0, "ucl": 4, "cal": 4, "tl": 22, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.OrderHistoryReadDto", "rp": "Backend_OrderHistoryReadDto.html", "cl": 8, "ucl": 0, "cal": 8, "tl": 22, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.OrderReadDto", "rp": "Backend_OrderReadDto.html", "cl": 14, "ucl": 0, "cal": 14, "tl": 20, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.OrderStatusUpdateDto", "rp": "Backend_OrderStatusUpdateDto.html", "cl": 3, "ucl": 0, "cal": 3, "tl": 9, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.DTOs.QueueReorderDto", "rp": "Backend_QueueReorderDto.html", "cl": 1, "ucl": 0, "cal": 1, "tl": 9, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.Branch", "rp": "Backend_Branch.html", "cl": 5, "ucl": 0, "cal": 5, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.BranchItemCapacity", "rp": "Backend_BranchItemCapacity.html", "cl": 4, "ucl": 2, "cal": 6, "tl": 12, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.Employee", "rp": "Backend_Employee.html", "cl": 7, "ucl": 1, "cal": 8, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.Item", "rp": "Backend_Item.html", "cl": 6, "ucl": 2, "cal": 8, "tl": 15, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.ItemIngredient", "rp": "Backend_ItemIngredient.html", "cl": 4, "ucl": 2, "cal": 6, "tl": 12, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.Order", "rp": "Backend_Order.html", "cl": 15, "ucl": 2, "cal": 17, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Models.OrderHistory", "rp": "Backend_OrderHistory.html", "cl": 8, "ucl": 1, "cal": 9, "tl": 17, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Services.OrderProductionService", "rp": "Backend_OrderProductionService.html", "cl": 0, "ucl": 80, "cal": 80, "tl": 124, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Artifax.Services.OrderTimeTrackingService", "rp": "Backend_OrderTimeTrackingService.html", "cl": 0, "ucl": 113, "cal": 113, "tl": 167, "cb": 0, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Program", "rp": "Backend_Program.html", "cl": 0, "ucl": 74, "cal": 74, "tl": 110, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Controllers.BranchController", "rp": "Backend_BranchController.html", "cl": 47, "ucl": 0, "cal": 47, "tl": 102, "cb": 14, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Controllers.ItemController", "rp": "Backend_ItemController.html", "cl": 311, "ucl": 0, "cal": 311, "tl": 432, "cb": 42, "tb": 42, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Controllers.OrderController", "rp": "Backend_OrderController.html", "cl": 281, "ucl": 0, "cal": 281, "tl": 436, "cb": 82, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Controllers.UserController", "rp": "Backend_UserController.html", "cl": 133, "ucl": 0, "cal": 133, "tl": 296, "cb": 40, "tb": 40, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Data.ArtifaxContext", "rp": "Backend_ArtifaxContext.html", "cl": 27, "ucl": 0, "cal": 27, "tl": 55, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.BranchDto", "rp": "Backend_BranchDto.html", "cl": 16, "ucl": 0, "cal": 16, "tl": 32, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.BranchItemCapacityReadDto", "rp": "Backend_BranchItemCapacityReadDto.html", "cl": 10, "ucl": 0, "cal": 10, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.EmployeeReadDto", "rp": "Backend_EmployeeReadDto.html", "cl": 11, "ucl": 0, "cal": 11, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.InventoryItemReadDto", "rp": "Backend_InventoryItemReadDto.html", "cl": 11, "ucl": 0, "cal": 11, "tl": 27, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.ItemIngredientReadDto", "rp": "Backend_ItemIngredientReadDto.html", "cl": 10, "ucl": 0, "cal": 10, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.DTOs.ItemReadDto", "rp": "Backend_ItemReadDto.html", "cl": 11, "ucl": 0, "cal": 11, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Artifax.Services.OrderTimeTrackingService", "rp": "Backend_OrderTimeTrackingService.html", "cl": 115, "ucl": 0, "cal": 115, "tl": 174, "cb": 16, "tb": 16, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Program", "rp": "Backend_Program.html", "cl": 56, "ucl": 0, "cal": 56, "tl": 95, "cb": 6, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
     ]},
 ];
 
@@ -341,37 +317,7 @@ var riskHotspotMetrics = [
 
 var riskHotspots = [
   {
-    "assembly": "Backend", "class": "Artifax.Services.OrderTimeTrackingService", "reportPath": "Backend_OrderTimeTrackingService.html", "methodName": "ProcessOrdersAsync()", "methodShortName": "ProcessOrdersAsync()", "fileIndex": 0, "line": 48,
-    "metrics": [
-      { "value": 272, "exceeded": true },
-      { "value": 16, "exceeded": true },
-    ]},
-  {
-    "assembly": "Backend", "class": "Program", "reportPath": "Backend_Program.html", "methodName": "\u003CMain\u003E$(System.String[])", "methodShortName": "\u003CMain\u003E$(...)", "fileIndex": 0, "line": 7,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "Backend", "class": "Artifax.Services.OrderProductionService", "reportPath": "Backend_OrderProductionService.html", "methodName": "ProcessOrdersAsync()", "methodShortName": "ProcessOrdersAsync()", "fileIndex": 0, "line": 47,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "Backend", "class": "Artifax.Controllers.UserController", "reportPath": "Backend_UserController.html", "methodName": "Verify2Fa()", "methodShortName": "Verify2Fa()", "fileIndex": 0, "line": 183,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "Backend", "class": "Artifax.Controllers.UserController", "reportPath": "Backend_UserController.html", "methodName": "ChangeEmployeeDetails()", "methodShortName": "ChangeEmployeeDetails()", "fileIndex": 0, "line": 247,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "Backend", "class": "Artifax.Controllers.OrderController", "reportPath": "Backend_OrderController.html", "methodName": "UpdateOrderStatus()", "methodShortName": "UpdateOrderStatus()", "fileIndex": 0, "line": 317,
+    "assembly": "Backend", "class": "Artifax.Controllers.OrderController", "reportPath": "Backend_OrderController.html", "methodName": "UpdateOrderStatus()", "methodShortName": "UpdateOrderStatus()", "fileIndex": 0, "line": 313,
     "metrics": [
       { "value": 26, "exceeded": false },
       { "value": 26, "exceeded": true },
@@ -379,14 +325,14 @@ var riskHotspots = [
   {
     "assembly": "Backend", "class": "Artifax.Controllers.OrderController", "reportPath": "Backend_OrderController.html", "methodName": "UpdateOrder()", "methodShortName": "UpdateOrder()", "fileIndex": 0, "line": 238,
     "metrics": [
-      { "value": 23, "exceeded": false },
-      { "value": 22, "exceeded": true },
+      { "value": 18, "exceeded": false },
+      { "value": 18, "exceeded": true },
     ]},
   {
     "assembly": "Backend", "class": "Artifax.Controllers.OrderController", "reportPath": "Backend_OrderController.html", "methodName": "CreateOrder()", "methodShortName": "CreateOrder()", "fileIndex": 0, "line": 155,
     "metrics": [
-      { "value": 18, "exceeded": false },
-      { "value": 18, "exceeded": true },
+      { "value": 16, "exceeded": false },
+      { "value": 16, "exceeded": true },
     ]},
 ];
 

@@ -137,7 +137,9 @@ function OtpVerifyPage() {
         employeeId = employeeDetails.employeeId;
         branchId = employeeDetails.branchId;
         const branches = await getBranches();
-        branchName = branches.find((branch) => branch.BranchID === branchId)?.BranchName;
+        // The API serialises camelCase (branchID/branchName); accept both casings.
+        const branch = (branches as Array<Record<string, unknown>>).find((b) => (b.BranchID ?? b.branchID) === branchId);
+        branchName = (branch?.BranchName ?? branch?.branchName) as string | undefined;
       } catch (branchError) {
         branchName = undefined;
       }

@@ -1,117 +1,193 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useApi } from '../../../../hooks';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CraeteUsersPage from './craeteusers';
+import { httpError, mockGet } from '../../../../test-utils/http';
+import { branchesFixture } from '../../../../test-utils/fixtures';
 
-jest.mock('../../../../hooks');
+const pieter = { id: 4, name: 'Pieter van der Merwe', email: 'pieter.vdmerwe@artifax.demo', branch: '2', role: 'Employee', status: 'Active' };
 
-const mockedUseApi = useApi as jest.MockedFunction<typeof useApi>;
+const input = (label: string) => screen.getByText(label, { selector: 'span' }).closest('label')!.querySelector('input')!;
 
-const branchResponse = [{ branchID: 1, branchName: 'Main Branch' }];
+function setup(props: Partial<React.ComponentProps<typeof CraeteUsersPage>> = {}) {
+  const onSave = jest.fn().mockResolvedValue(undefined);
+  const onDelete = jest.fn();
+  const utils = render(<CraeteUsersPage onSave={onSave} onDelete={onDelete} {...props} />);
+  return { onSave, onDelete, ...utils };
+}
 
-function setupApiMock() {
-  const api = {
-    get: jest.fn().mockResolvedValue({ data: branchResponse }),
-  };
-  mockedUseApi.mockReturnValue(api as any);
-  return api;
+function fillNewUser() {
+  fireEvent.change(input('Full Name'), { target: { value: 'Lerato Khumalo' } });
+  fireEvent.change(input('Email'), { target: { value: 'lerato.khumalo@artifax.demo' } });
+  fireEvent.change(input('Password'), { target: { value: 'Secret123!' } });
 }
 
 describe('CraeteUsersPage', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    window.localStorage.clear();
-  });
+  beforeEach(() => mockGet({ '/Branch': branchesFixture }));
 
-  it('renders the new user form and enables create when input is valid', async () => {
-    const onSave = jest.fn();
-    const onDelete = jest.fn();
-    setupApiMock();
+  describe('creating a user', () => {
+    it('defaults to the first branch from the backend and submits the new user', async () => {
+      const { onSave } = setup();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Select branch' })).toHaveTextContent('Main Branch'));
 
-    render(<CraeteUsersPage onSave={onSave} onDelete={onDelete} />);
+      fillNewUser();
+      fireEvent.click(screen.getByRole('button', { name: 'Select role' }));
+      fireEvent.click(screen.getByRole('option', { name: 'Employee' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Select branch' }));
+      fireEvent.click(screen.getByRole('option', { name: 'Durban Assembly Plant' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Create User' }));
 
-    await waitFor(() => expect(useApi).toHaveBeenCalled());
-
-    const createButton = screen.getByRole('button', { name: /Create User/i });
-    expect(createButton).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Alice Walker' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'alice.walker@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/Enter password/i), { target: { value: 'secret12' } });
-
-    expect(createButton).toBeEnabled();
-
-    fireEvent.click(createButton);
-
-    await waitFor(() => {
-      expect(onSave).toHaveBeenCalledWith({
-        id: null,
-        name: 'Alice Walker',
-        email: 'alice.walker@example.com',
-        branch: '1',
-        role: 'Admin',
-        status: 'Active',
-        password: 'secret12',
-      });
+      await waitFor(() => expect(onSave).toHaveBeenCalledWith({
+        id: null, name: 'Lerato Khumalo', email: 'lerato.khumalo@artifax.demo', branch: '3', role: 'Employee', status: 'Active', password: 'Secret123!',
+      }));
     });
 
-    expect(window.localStorage.getItem('artifax.currentUser')).toContain('Alice Walker');
+    it.each([
+      ['', 'Secret123!', 'Email is required'],
+      ['not-an-email', 'Secret123!', 'Please enter a valid email address'],
+      ['lerato@artifax.demo', '', 'Password is required'],
+      ['lerato@artifax.demo', 'abc', 'Password must be at least 5 characters'],
+      ['lerato@artifax.demo', 'way-too-long-password', 'Password must be no more than 15 characters'],
+    ])('blocks invalid input (%s / %s)', async (email, password, message) => {
+      const { onSave } = setup();
+      fireEvent.change(input('Full Name'), { target: { value: 'Lerato' } });
+      fireEvent.change(input('Email'), { target: { value: email } });
+      fireEvent.change(input('Password'), { target: { value: password } });
+
+      expect(screen.getByText(message)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Create User' })).toBeDisabled();
+      fireEvent.submit(screen.getByRole('button', { name: 'Create User' }).closest('form')!);
+      expect(onSave).not.toHaveBeenCalled();
+    });
+
+    it('shows the server’s message when saving fails', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      const { onSave } = setup();
+      onSave.mockRejectedValueOnce(new Error('Email Already Exists')).mockRejectedValueOnce({});
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Select branch' })).toHaveTextContent('Main Branch'));
+      fillNewUser();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Create User' }));
+      expect(await screen.findByText('Email Already Exists')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Create User' }));
+      expect(await screen.findByText('Save failed', { selector: 'p' })).toBeInTheDocument();
+
+      fireEvent.change(input('Full Name'), { target: { value: 'Lerato K' } });
+      expect(screen.queryByText('Save failed', { selector: 'p' })).not.toBeInTheDocument();
+    });
+
+    it('falls back to placeholder branches when branches can’t be loaded', async () => {
+      const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockGet({ '/Branch': httpError(500) });
+      setup();
+
+      await waitFor(() => expect(error).toHaveBeenCalledWith('Failed to load branches', expect.anything()));
+      fireEvent.click(screen.getByRole('button', { name: 'Select branch' }));
+      expect(screen.getByRole('option', { name: 'Warehouse A' })).toBeInTheDocument();
+    });
+
+    it('reads branches in any casing, and handles an empty list', async () => {
+      mockGet({ '/Branch': [{ BranchId: 7, name: 'Pretoria Plant' }, {}] });
+      const { unmount } = setup();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Select branch' })).toHaveTextContent('Pretoria Plant'));
+      unmount();
+
+      mockGet({ '/Branch': null });
+      setup();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Select branch' })).toHaveTextContent('Warehouse A'));
+    });
+
+    it('toggles password visibility', () => {
+      setup();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+      expect(input('Password')).toHaveAttribute('type', 'text');
+      fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+      expect(input('Password')).toHaveAttribute('type', 'password');
+    });
   });
 
-  it('shows validation errors for invalid email and password', async () => {
-    setupApiMock();
-    render(<CraeteUsersPage onSave={jest.fn()} onDelete={jest.fn()} />);
+  describe('an existing user', () => {
+    it('shows their details read-only until Edit is pressed', async () => {
+      setup({ user: pieter });
 
-    await waitFor(() => expect(useApi).toHaveBeenCalled());
+      expect(input('Full Name')).toHaveValue('Pieter van der Merwe');
+      expect(input('Email')).toHaveValue('pieter.vdmerwe@artifax.demo');
+      expect(input('Full Name')).toBeDisabled();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Select branch' })).toHaveTextContent('Johannesburg Fabrication Plant'));
+      expect(screen.getByRole('button', { name: 'Select role' })).toHaveTextContent('Employee');
+    });
 
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'bad-email' } });
-    fireEvent.change(screen.getByPlaceholderText(/Enter password/i), { target: { value: '123' } });
+    it('asks the page before editing, and only allows it when the page agrees', async () => {
+      const onRequestEdit = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+      setup({ user: pieter, onRequestEdit });
 
-    expect(screen.getByText(/Please enter a valid email address/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create User/i })).toBeDisabled();
-  });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(onRequestEdit).toHaveBeenCalledWith(4));
+      expect(input('Full Name')).toBeDisabled();
 
-  it('shows a password-specific validation error when the email is valid', async () => {
-    setupApiMock();
-    render(<CraeteUsersPage onSave={jest.fn()} onDelete={jest.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(input('Full Name')).toBeEnabled());
+    });
 
-    await waitFor(() => expect(useApi).toHaveBeenCalled());
+    it('saves edits without a password unless one was typed', async () => {
+      const { onSave } = setup({ user: pieter });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(input('Full Name')).toBeEnabled());
 
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'good.email@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/Enter password/i), { target: { value: '123' } });
+      fireEvent.change(input('Full Name'), { target: { value: 'Pieter vd Merwe' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
-    expect(screen.getByText(/Password must be at least 5 characters/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create User/i })).toBeDisabled();
-  });
+      await waitFor(() => expect(onSave).toHaveBeenCalledWith({ ...pieter, name: 'Pieter vd Merwe', password: undefined }));
+      await waitFor(() => expect(input('Full Name')).toBeDisabled());
+    });
 
-  it('toggles password visibility and handles existing user edit/delete', async () => {
-    const onSave = jest.fn();
-    const onDelete = jest.fn();
-    setupApiMock();
+    it('sends a new password when one is typed', async () => {
+      const { onSave } = setup({ user: pieter });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(input('Password')).toBeEnabled());
 
-    const user = {
-      id: 5,
-      name: 'Existing User',
-      email: 'existing@example.com',
-      branch: '1',
-      role: 'Employee',
-      status: 'Active',
-    };
+      fireEvent.change(input('Password'), { target: { value: 'NewPass1!' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
-    render(<CraeteUsersPage user={user} onSave={onSave} onDelete={onDelete} />);
+      await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ password: 'NewPass1!' })));
+    });
 
-    await waitFor(() => expect(useApi).toHaveBeenCalled());
+    it('restores the saved details when editing is cancelled', async () => {
+      setup({ user: pieter });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(input('Full Name')).toBeEnabled());
+      fireEvent.change(input('Full Name'), { target: { value: 'Typo' } });
 
-    expect(screen.getByRole('button', { name: /Edit/i })).toBeInTheDocument();
-    const deleteButton = screen.getByRole('button', { name: /Delete User/i });
-    expect(deleteButton).toBeInTheDocument();
-    expect(screen.getByDisplayValue('************')).toHaveAttribute('type', 'password');
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    fireEvent.click(deleteButton);
-    expect(onDelete).toHaveBeenCalledWith(5);
+      expect(input('Full Name')).toHaveValue('Pieter van der Merwe');
+      expect(input('Full Name')).toBeDisabled();
+      expect(input('Password')).toHaveValue('************');
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: /Edit/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Show password/i }));
-    expect(screen.getByDisplayValue('************')).toHaveAttribute('type', 'text');
+    it('deletes the user', () => {
+      const { onDelete } = setup({ user: pieter });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete User' }));
+
+      expect(onDelete).toHaveBeenCalledWith(4);
+    });
+
+    it('keeps an edit going when the same user is refreshed, but resets for a different user or a new one', async () => {
+      const { rerender, onSave, onDelete } = setup({ user: pieter });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+      await waitFor(() => expect(input('Full Name')).toBeEnabled());
+
+      rerender(<CraeteUsersPage user={{ ...pieter }} onSave={onSave} onDelete={onDelete} />);
+      expect(input('Full Name')).toBeEnabled();
+
+      rerender(<CraeteUsersPage user={{ ...pieter, id: 6, name: 'Ayesha Patel' }} onSave={onSave} onDelete={onDelete} />);
+      expect(input('Full Name')).toBeDisabled();
+      expect(input('Full Name')).toHaveValue('Ayesha Patel');
+
+      rerender(<CraeteUsersPage onSave={onSave} onDelete={onDelete} />);
+      expect(input('Full Name')).toHaveValue('');
+      expect(screen.getByRole('button', { name: 'Create User' })).toBeInTheDocument();
+    });
   });
 });

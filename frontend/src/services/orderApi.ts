@@ -28,12 +28,24 @@ type OrderItemDto = {
   quantity: number;
 };
 
+// The API's OrderReadDto (itemName, quantity, createdDateTime…). The older
+// orderItems/orderDateTime shape is still accepted as a fallback.
 type OrderDto = {
   orderID: number;
-  orderDateTime: string;
   status: string;
-  orderItems: OrderItemDto[];
+  itemID?: number;
+  itemName?: string;
+  quantity?: number;
+  createdDateTime?: string;
+  totalTime?: number;
+  timeElapsed?: number;
+  employeeID?: number;
+  orderExpedite?: boolean;
+  orderDateTime?: string;
+  orderItems?: OrderItemDto[];
 };
+
+const orderCreated = (order: OrderDto): string => order.createdDateTime ?? order.orderDateTime ?? '';
 
 type OrderStatusUpdateDto = {
   status: string;
@@ -129,7 +141,7 @@ export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; que
   }, {});
 
   const sortedOrders = (orders ?? []).slice()
-    .sort((left, right) => new Date(left.orderDateTime).getTime() - new Date(right.orderDateTime).getTime())
+    .sort((left, right) => new Date(orderCreated(left)).getTime() - new Date(orderCreated(right)).getTime())
     .filter((order) => {
       const status = normalizeQueueStatus(order.status);
       return status === 'Queued' || status === 'Active' || status === 'Paused';
@@ -144,22 +156,21 @@ export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; que
   });
 
   const jobs = normalizedOrders.map((order) => {
-    const totalTime = (order as any).totalTime;
-    const timeElapsed = (order as any).timeElapsed;
     const items = order.orderItems ?? [];
-    const materials = [items[0]?.itemName ?? `Item ${order.orderID}`];
+    const itemName = order.itemName || items[0]?.itemName;
+    const expedited = order.orderExpedite === true;
 
     return {
       orderID: order.orderID,
       id: `order-${order.orderID}`,
-      name: items[0]?.itemName ?? `Order ${order.orderID}`,
-      qty: items.reduce((sum, item) => sum + (item.quantity ?? 0), 0) || items.length || 1,
+      name: itemName ?? `Order ${order.orderID}`,
+      qty: order.quantity ?? (items.reduce((sum, item) => sum + (item.quantity ?? 0), 0) || items.length || 1),
       status: order.status,
-      progress: calculateProgress(totalTime, timeElapsed),
-      timeLeft: formatTimeLeft(totalTime, timeElapsed),
-      materials,
-      employeeName: employeeMap[(order as any).employeeID ?? 0] ?? 'Unknown Employee',
-      createdDateTime: order.orderDateTime,
+      progress: calculateProgress(order.totalTime, order.timeElapsed, expedited),
+      timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed, expedited),
+      materials: [itemName ?? `Item ${order.itemID ?? order.orderID}`],
+      employeeName: employeeMap[order.employeeID ?? 0] ?? 'Unknown Employee',
+      createdDateTime: orderCreated(order),
       location: `Order ${order.orderID}`,
     } satisfies QueueJob;
   });
@@ -181,17 +192,18 @@ export async function getCraftingJobs(): Promise<CraftingJob[]> {
         return null;
       }
 
-      const totalQuantity = order.orderItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-      const primaryItem = order.orderItems[0]?.itemName ?? `Order #${order.orderID}`;
-      const materialLabels = order.orderItems.map((item) => `${item.itemName} x${item.quantity}`);
+      const lines = order.orderItems ?? [];
+      const totalQuantity = lines.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+      const primaryItem = lines[0]?.itemName ?? `Order #${order.orderID}`;
+      const materialLabels = lines.map((item) => `${item.itemName} x${item.quantity}`);
 
       return {
         id: `order-${order.orderID}`,
         name: primaryItem,
-        qty: totalQuantity || order.orderItems.length || 1,
+        qty: totalQuantity || lines.length || 1,
         status,
         progress: status === 'In Progress' ? 45 : 0,
-        timeLeft: formatDateTime(order.orderDateTime),
+        timeLeft: formatDateTime(orderCreated(order)),
         materials: materialLabels,
         location: `Order ${order.orderID}`,
         type: deriveJobType(primaryItem),

@@ -15,12 +15,19 @@ namespace Artifax.Services
     {
         private readonly ILogger<OrderTimeTrackingService> logger;
         private readonly IServiceProvider serviceProvider;
-        private readonly TimeSpan checkInterval = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan checkInterval;
 
         public OrderTimeTrackingService(ILogger<OrderTimeTrackingService> logger, IServiceProvider serviceProvider)
+            : this(logger, serviceProvider, TimeSpan.FromMinutes(1))
+        {
+        }
+
+        // Lets tests use a short interval; DI only uses the public constructor above.
+        internal OrderTimeTrackingService(ILogger<OrderTimeTrackingService> logger, IServiceProvider serviceProvider, TimeSpan checkInterval)
         {
             this.logger = logger;
             this.serviceProvider = serviceProvider;
+            this.checkInterval = checkInterval;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -44,7 +51,8 @@ namespace Artifax.Services
             logger.LogInformation("OrderTimeTrackingService stopped.");
         }
 
-        private async Task ProcessOrdersAsync(CancellationToken stoppingToken)
+        // internal (not private) so Backend.Tests can run one processing cycle directly
+        internal async Task ProcessOrdersAsync(CancellationToken stoppingToken)
         {
             using (var scope = serviceProvider.CreateScope())
             {
@@ -124,20 +132,21 @@ namespace Artifax.Services
                         .Where(o => o.BranchID == branch.BranchID && o.Status == "Active")
                         .CountAsync(stoppingToken);
 
-                    // If less than 3 active, activate the next queued order:
+                    // Fill the free slots (max 3 active per branch) with the next queued orders:
                     // lowest QueuePosition first (set by the user reordering), then oldest.
-                    while (activeCount < 3)
+                    // Loaded in one query so each order is activated exactly once per cycle
+                    // (status changes aren't saved until the end of the cycle).
+                    int freeSlots = Math.Max(0, 3 - activeCount);
+                    var ordersToStart = await context.Orders
+                        .Where(o => o.BranchID == branch.BranchID && o.Status == "Queued")
+                        .OrderBy(o => o.QueuePosition == null)
+                        .ThenBy(o => o.QueuePosition)
+                        .ThenBy(o => o.CreatedDateTime)
+                        .Take(freeSlots)
+                        .ToListAsync(stoppingToken);
+
+                    foreach (var oldestQueuedOrder in ordersToStart)
                     {
-                        var oldestQueuedOrder = await context.Orders
-                            .Where(o => o.BranchID == branch.BranchID && o.Status == "Queued")
-                            .OrderBy(o => o.QueuePosition == null)
-                            .ThenBy(o => o.QueuePosition)
-                            .ThenBy(o => o.CreatedDateTime)
-                            .FirstOrDefaultAsync(stoppingToken);
-
-                        if (oldestQueuedOrder == null)
-                            break; // No queued orders left
-
                         oldestQueuedOrder.Status = "Active";
                         oldestQueuedOrder.StartedDateTime = DateTime.UtcNow;
                         oldestQueuedOrder.QueuePosition = null;
@@ -155,8 +164,6 @@ namespace Artifax.Services
                             ChangeReason = "Auto-activated by background service (branch had < 3 active orders)"
                         };
                         context.OrderHistories.Add(activationHistory);
-
-                        activeCount++;
                     }
                 }
 

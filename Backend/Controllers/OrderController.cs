@@ -68,7 +68,7 @@ namespace Artifax.Controllers
             {
                 OrderID = o.OrderID,
                 ItemID = o.ItemID,
-                ItemName = o.Item?.ItemName ?? "Unknown",
+                ItemName = o.Item.ItemName ?? "Unknown", // Item is a required, included relation
                 Quantity = o.Quantity,
                 CreatedDateTime = o.CreatedDateTime,
                 StartedDateTime = o.StartedDateTime,
@@ -127,7 +127,7 @@ namespace Artifax.Controllers
             {
                 OrderID = order.OrderID,
                 ItemID = order.ItemID,
-                ItemName = order.Item?.ItemName ?? "Unknown",
+                ItemName = order.Item.ItemName ?? "Unknown", // Item is a required, included relation
                 Quantity = order.Quantity,
                 CreatedDateTime = order.CreatedDateTime,
                 StartedDateTime = order.StartedDateTime,
@@ -211,7 +211,7 @@ namespace Artifax.Controllers
             {
                 OrderID = created.OrderID,
                 ItemID = created.ItemID,
-                ItemName = created.Item?.ItemName ?? "Unknown",
+                ItemName = item.ItemName ?? "Unknown",
                 Quantity = created.Quantity,
                 CreatedDateTime = created.CreatedDateTime,
                 StartedDateTime = created.StartedDateTime,
@@ -275,12 +275,8 @@ namespace Artifax.Controllers
             existingOrder.EmployeeID = updatedOrderDto.EmployeeID;
             existingOrder.OrderExpedite = updatedOrderDto.OrderExpedite;
 
-            // Recalculate TotalTime if Item or Quantity changed
-            var updatedItem = await context.Items.FindAsync(updatedOrderDto.ItemID);
-            if (updatedItem != null)
-            {
-                existingOrder.TotalTime = updatedOrderDto.Quantity * updatedItem.ProductionTime;
-            }
+            // Recalculate TotalTime in case the Item or Quantity changed (item was validated above)
+            existingOrder.TotalTime = updatedOrderDto.Quantity * item.ProductionTime;
 
             await context.SaveChangesAsync();
 
@@ -294,7 +290,7 @@ namespace Artifax.Controllers
             {
                 OrderID = result.OrderID,
                 ItemID = result.ItemID,
-                ItemName = result.Item?.ItemName ?? "Unknown",
+                ItemName = item.ItemName ?? "Unknown",
                 Quantity = result.Quantity,
                 CreatedDateTime = result.CreatedDateTime,
                 StartedDateTime = result.StartedDateTime,

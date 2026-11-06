@@ -1,39 +1,62 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StatsGrid from './stats';
+import { httpError, mockGet } from '../../../../test-utils/http';
+import { ordersFixture } from '../../../../test-utils/fixtures';
+
+const value = (label: string) => screen.getByText(label, { selector: '.stat-label' }).nextSibling;
 
 describe('StatsGrid', () => {
-  it('renders stat cards and updates transform styles on hover', () => {
-    const { container } = render(<StatsGrid />);
-
-    const firstCard = container.querySelector('.info-card');
-    expect(firstCard).toBeInTheDocument();
-    expect(screen.getByText(/Active Jobs/i)).toBeInTheDocument();
-
-    if (!firstCard) {
-      throw new Error('Expected info card wrapper to exist');
-    }
-
-    const cardElement = firstCard as HTMLElement;
-    Object.defineProperty(cardElement, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        width: 100,
-        height: 100,
-        left: 0,
-        top: 0,
-        right: 100,
-        bottom: 100,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      } as DOMRect),
+  it('counts recipes and orders by status from the backend', async () => {
+    mockGet({
+      '/Item/item/allItemBlueprints': [{ itemID: 30 }, { itemID: 31 }, { itemID: 32 }],
+      '/Order': [...ordersFixture, { status: ' COMPLETED ' }, { status: 'Cancelled' }, { status: 'canceled' }, {}],
     });
 
-    fireEvent.mouseMove(cardElement, { clientX: 75, clientY: 50 });
-    expect(cardElement.style.transform).toContain('scale(1.02)');
+    render(<StatsGrid />);
 
-    fireEvent.mouseLeave(cardElement);
-    expect(cardElement.style.transform).toBe('');
+    await waitFor(() => expect(value('Recipes')).toHaveTextContent('3'));
+    expect(value('Active Jobs')).toHaveTextContent('1');
+    expect(value('Completed')).toHaveTextContent('2');
+    expect(value('Cancelled')).toHaveTextContent('2');
+  });
+
+  it('shows zeros for empty or unexpected responses', async () => {
+    mockGet({ '/Item/item/allItemBlueprints': { not: 'a list' }, '/Order': null });
+
+    render(<StatsGrid />);
+
+    await waitFor(() => expect(value('Recipes')).toHaveTextContent('0'));
+    expect(value('Active Jobs')).toHaveTextContent('0');
+  });
+
+  it('handles a null blueprint response', async () => {
+    mockGet({ '/Item/item/allItemBlueprints': null, '/Order': [] });
+
+    render(<StatsGrid />);
+
+    await waitFor(() => expect(value('Recipes')).toHaveTextContent('0'));
+  });
+
+  it('logs and keeps zeros when loading fails', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockGet({ '/Item/item/allItemBlueprints': httpError(500), '/Order': [] });
+
+    render(<StatsGrid />);
+
+    await waitFor(() => expect(error).toHaveBeenCalledWith('Failed to load crafting stats', expect.anything()));
+    expect(value('Completed')).toHaveTextContent('0');
+  });
+
+  it('tilts a card on hover and resets on leave', () => {
+    mockGet({ '/Item/item/allItemBlueprints': [], '/Order': [] });
+    const { container } = render(<StatsGrid />);
+    const card = container.querySelector('.info-card') as HTMLElement;
+    card.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100 } as DOMRect);
+
+    fireEvent.mouseMove(card, { clientX: 75, clientY: 25 });
+    expect(card.style.transform).toContain('scale(1.02)');
+
+    fireEvent.mouseLeave(card);
+    expect(card.style.transform).toBe('');
   });
 });

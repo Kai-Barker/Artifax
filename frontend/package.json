@@ -36,6 +36,41 @@
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx,js,jsx}",
+      "!src/**/*.d.ts",
+      "!src/**/*.test.{ts,tsx,js,jsx}",
+      "!src/**/__tests__/**",
+      "!src/**/__mocks__/**",
+      "!src/test-utils/**",
+      "!src/index.tsx",
+      "!src/App.tsx",
+      "!src/reportWebVitals.js",
+      "!src/setupTests.js",
+      "!src/hooks/index.ts",
+      "!src/data/fallback.ts",
+      "!src/config/navigation.ts",
+      "!src/pages/crafting/components/craftingData.ts",
+      "!src/pages/crafting/components/historyData.ts",
+      "!src/components/common/**",
+      "!src/components/layout/PageHeader.tsx",
+      "!src/layouts/AppLayout.tsx",
+      "!src/pages/crafting/components/craftingNav/**",
+      "!src/pages/auth/OtpVerifySuccessPage.tsx",
+      "!src/pages/auth/OtpVerifyFailedPage.tsx",
+      "!src/forceLogin/**",
+      "!src/pages/navbar/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    }
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

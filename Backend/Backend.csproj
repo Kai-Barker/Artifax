@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Lets Backend.Tests reach internal members (e.g. OrderTimeTrackingService.ProcessOrdersAsync) -->
+    <InternalsVisibleTo Include="Backend.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 <PackageReference Include="DotNetEnv" Version="3.2.0" />
 <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />

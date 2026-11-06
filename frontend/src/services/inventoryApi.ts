@@ -318,6 +318,14 @@ export async function updateInventoryItem(
   itemId: number, 
   payload: InventoryItemUpdate & { branchId: number }
 ): Promise<void> {
+  // Validate before sending anything, so an invalid save doesn't half-apply.
+  if (payload.quantity < 0) {
+    throw new Error('Quantity cannot be negative.');
+  }
+  if (!payload.branchId) {
+    throw new Error(`Cannot update quantity: No branchId provided for item ${itemId}.`);
+  }
+
   try {
     await apiClient.put(`Item/${itemId}`, {
       itemName: payload.itemName,
@@ -325,12 +333,6 @@ export async function updateInventoryItem(
       productionTime: payload.productionTime,
       price: payload.price,
     });
-    if (payload.quantity < 0) {
-      throw new Error('Quantity cannot be negative.');
-    }
-    if (!payload.branchId) {
-      throw new Error(`Cannot update quantity: No branchId provided for item ${itemId}.`);
-    }
     await apiClient.put(`Item/Branch/${payload.branchId}/Item/${itemId}`, null, {
       params: { quantity: payload.quantity },
     });
