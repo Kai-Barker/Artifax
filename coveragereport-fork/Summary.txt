@@ -1,0 +1,59 @@
+Summary
+  Generated on: 2026/11/06 - 13:32:51
+  Coverage date: 2026/11/06 - 13:29:17
+  Parser: Cobertura
+  Assemblies: 1
+  Classes: 37
+  Files: 36
+  Line coverage: 57.9%
+  Covered lines: 756
+  Uncovered lines: 549
+  Coverable lines: 1305
+  Total lines: 2176
+  Branch coverage: 51.6% (124 of 240)
+  Covered branches: 124
+  Total branches: 240
+  Method coverage: 73.6% (176 of 239)
+  Full method coverage: 70.2% (168 of 239)
+  Covered methods: 176
+  Fully covered methods: 168
+  Total methods: 239
+
+Backend                                       57.9%
+  Artifax.Controllers.BranchController           0%
+  Artifax.Controllers.ItemController          76.8%
+  Artifax.Controllers.OrderController         97.5%
+  Artifax.Controllers.UserController          28.5%
+  Artifax.Data.ArtifaxContext                  100%
+  Artifax.DTOs.BranchDto                         0%
+  Artifax.DTOs.BranchItemCapacityReadDto       100%
+  Artifax.DTOs.BranchItemCapacityWriteDto      100%
+  Artifax.DTOs.CurrentUserDto                    0%
+  Artifax.DTOs.EmployeeReadDto                 100%
+  Artifax.DTOs.EmployeeWriteDto                  0%
+  Artifax.DTOs.IngredientBlueprintReadDto       80%
+  Artifax.DTOs.IngredientBlueprintWriteDto     100%
+  Artifax.DTOs.InventoryItemReadDto              0%
+  Artifax.DTOs.ItemBlueprintReadDto            100%
+  Artifax.DTOs.ItemBlueprintWriteDto            75%
+  Artifax.DTOs.ItemIngredientReadDto           100%
+  Artifax.DTOs.ItemIngredientWriteDto          100%
+  Artifax.DTOs.ItemReadDto                     100%
+  Artifax.DTOs.ItemWriteDto                    100%
+  Artifax.DTOs.LoginDto                        100%
+  Artifax.DTOs.OrderCreateDto                  100%
+  Artifax.DTOs.OrderHistoryCreateDto             0%
+  Artifax.DTOs.OrderHistoryReadDto             100%
+  Artifax.DTOs.OrderReadDto                    100%
+  Artifax.DTOs.OrderStatusUpdateDto            100%
+  Artifax.DTOs.QueueReorderDto                 100%
+  Artifax.Models.Branch                        100%
+  Artifax.Models.BranchItemCapacity           66.6%
+  Artifax.Models.Employee                     87.5%
+  Artifax.Models.Item                           75%
+  Artifax.Models.ItemIngredient               66.6%
+  Artifax.Models.Order                        88.2%
+  Artifax.Models.OrderHistory                 88.8%
+  Artifax.Services.OrderProductionService        0%
+  Artifax.Services.OrderTimeTrackingService      0%
+  Program                                        0%
